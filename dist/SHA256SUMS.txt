@@ -1,3 +1,5 @@
 59d00ab6bae01ce55896fe1fc67155877f149de8c1897e62d19f154a7aaeb1c1  ScreenFilter-0.1.0-debug.apk
 981b6cfc939e67b0c40d93f364c6a65e904aaa1e63b0778c7e63c259f2694cd9  ScreenFilter-0.2.0-compat-debug.apk
 761b2ea8d83d69eedfd7d551b217801230c7c466bfdabac0d01585a53ff0bff5  ScreenFilter-0.2.0-compat-transfer.zip
+e6034a97f02868140cc9798265ab1e6ca9dcd86c594b5ea7d7c05945a48b0021  ScreenFilter-0.3.0-vision-debug.apk
+14aa8e920a22597bca545b02ad86cadd8e43883367e5908d09922d807c7c14a9  ScreenFilter-0.3.0-vision-transfer.zip

@@ -36,10 +36,9 @@ public final class PreviewActivity extends Activity {
             Ui.add(content, Ui.text(this, "示例内容  ·  本地匹配", 12, Ui.MUTED, false), 0);
             frame.addView(content, new FrameLayout.LayoutParams(-1, -2));
             if (demo.matches(title)) {
-                MosaicView mask = new MosaicView(this, false);
+                CoverView mask = new CoverView(this);
+                mask.configure(new FilterSettings(this).style(), "calm", "", null);
                 frame.addView(mask, new FrameLayout.LayoutParams(-1, -1));
-                frame.addOnLayoutChangeListener((v, l, t, r, b, ol, ot, or, ob) ->
-                        mask.setRegions(List.of(new Box(0, 0, r - l, b - t))));
             }
             Ui.add(page, frame, Ui.dp(this, 16));
         }

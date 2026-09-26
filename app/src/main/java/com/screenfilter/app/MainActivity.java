@@ -19,6 +19,8 @@ import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.Switch;
 import android.widget.TextView;
+import android.widget.Spinner;
+import android.widget.ArrayAdapter;
 import android.widget.Toast;
 import com.screenfilter.app.core.KeywordMatcher;
 
@@ -28,13 +30,14 @@ public final class MainActivity extends Activity {
     private CheckBox[] apps;
     // Native Material theme; no AppCompat widget is needed.
     @android.annotation.SuppressLint("UseSwitchCompatOrMaterialCode")
-    private Switch ocr, expand;
+    private Switch ocr, expand, strict;
+    private Spinner style;
     private TextView status;
     private final Handler handler = new Handler(Looper.getMainLooper());
     private final Runnable update = new Runnable() {
         @Override public void run() {
             status.setText(!FilterRuntime.connected ? "● 尚未开启无障碍服务"
-                    : settings.enabled() ? "● 已开启 · 返回目标 App 即可使用" : "● 已暂停");
+                    : settings.enabled() ? "● 已开启 · " + FilterRuntime.status : "● 已暂停");
             handler.postDelayed(this, 800);
         }
     };
@@ -51,20 +54,21 @@ public final class MainActivity extends Activity {
         setContentView(scroll);
         Ui.insets(scroll);
 
-        Ui.add(page, Ui.text(this, "SCREEN FILTER  /  早期体验版", 11, Ui.GREEN, true), Ui.dp(this, 12));
+        Ui.add(page, Ui.text(this, "SCREEN FILTER  /  0.3 图文体验版", 11, Ui.GREEN, true), Ui.dp(this, 12));
         Ui.add(page, Ui.text(this, "把屏幕，留给喜欢的。", 27, Ui.INK, true), Ui.dp(this, 10));
-        Ui.add(page, Ui.text(this, "自定义关键词，遮住不想看的内容。\n"
-                + (Build.VERSION.SDK_INT >= 34 ? "本地中文识别 + 界面文字匹配" : "兼容模式 · 界面文字匹配"),
+        Ui.add(page, Ui.text(this, "本地关键词快速遮挡 · 通义千问图文判断\n留一小块安静，给自己。",
                 14, Ui.MUTED, false), Ui.dp(this, 22));
 
         LinearLayout stateCard = Ui.card(this, page);
         status = Ui.text(this, "", 16, Ui.GREEN, true);
         Ui.add(stateCard, status, Ui.dp(this, 8));
         Ui.add(stateCard, Ui.text(this, "切换到其他 App、锁屏或弹出输入法时暂停遮挡。", 13, Ui.MUTED, false), 0);
+        Ui.add(stateCard, Ui.text(this, "需要的权限：无障碍服务 → 屏幕过滤。用于读取文字位置、截图及显示遮挡；无需开启屏幕朗读。系统若未直接定位，请向下滑到「已安装的服务」。", 13, Ui.MUTED, false), Ui.dp(this, 8));
+        Ui.add(stateCard, Ui.button(this, "开启 / 管理屏幕过滤服务", false, v -> explainAndOpen(false)), 0);
 
         LinearLayout wordsCard = Ui.card(this, page);
         Ui.add(wordsCard, Ui.text(this, "01  不想看到什么", 18, Ui.INK, true), Ui.dp(this, 8));
-        Ui.add(wordsCard, Ui.text(this, "每行一个词，命中任意一个就遮挡。也支持逗号分隔，最多 100 个。", 13, Ui.MUTED, false), Ui.dp(this, 8));
+        Ui.add(wordsCard, Ui.text(this, "本地快捷词：每行一个，命中就遮挡。模型的自然语言要求在下面单独设置。", 13, Ui.MUTED, false), Ui.dp(this, 8));
         keywords = new EditText(this);
         keywords.setId(R.id.keywords);
         keywords.setText(settings.keywords());
@@ -76,6 +80,9 @@ public final class MainActivity extends Activity {
         keywords.setInputType(android.text.InputType.TYPE_CLASS_TEXT | android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE);
         keywords.setFilters(new InputFilter[]{new InputFilter.LengthFilter(4000)});
         Ui.add(wordsCard, keywords, 0);
+        Ui.add(page, Ui.button(this, "配置通义千问 · 地址、模型、API Key", true, v -> {
+            save(); startActivity(new Intent(this, ModelSettingsActivity.class));
+        }), Ui.dp(this, 18));
 
         LinearLayout appsCard = Ui.card(this, page);
         Ui.add(appsCard, Ui.text(this, "02  在这些 App 中过滤", 18, Ui.INK, true), Ui.dp(this, 8));
@@ -97,12 +104,22 @@ public final class MainActivity extends Activity {
         ocr = toggle("识别图片中的文字", settings.ocr(), R.id.ocr_enabled);
         ocr.setEnabled(Build.VERSION.SDK_INT >= 34);
         if (Build.VERSION.SDK_INT < 34) {
-            Ui.add(options, Ui.text(this, "这台设备使用界面文字模式，不截屏。图片内的文字和未提供界面文字的内容暂不识别。", 13, Ui.MUTED, false), Ui.dp(this, 10));
+            Ui.add(options, Ui.text(this, "这台设备的本地 OCR 不可用。开启云端后会尝试兼容截图进行图文判断；已遮住的内容保持覆盖，不撤罩取图。", 13, Ui.MUTED, false), Ui.dp(this, 10));
         }
         expand = toggle("找到卡片边界时遮住整卡", settings.expand(), R.id.expand_cards);
         Ui.add(options, ocr, Ui.dp(this, 12));
         Ui.add(options, expand, Ui.dp(this, 8));
-        Ui.add(options, Ui.text(this, "识别不出卡片边界时，只遮挡命中文字。方块完全不透明，触摸由系统传给下方 App。", 12, Ui.MUTED, false), 0);
+        strict = toggle("先遮住当前窗口，模型判断后再放行", settings.strict(), R.id.strict_enabled);
+        strict.setEnabled(Build.VERSION.SDK_INT >= 34);
+        Ui.add(options, strict, Ui.dp(this, 8));
+        Ui.add(options, Ui.text(this, Build.VERSION.SDK_INT >= 34
+                ? "需先启用云端。页面变化后暂时遮住窗口，判断失败继续遮挡，可轻点提示暂停。会增加等待时间；仍不能保证系统首帧零曝光。"
+                : "本机不支持遮挡下方窗口的独立截图，暂不提供「先遮后审」。模型判断存在等待，无法保证首帧遮挡或逐帧过滤视频。", 12, Ui.MUTED, false), Ui.dp(this, 12));
+        style = new Spinner(this); style.setId(R.id.cover_style);
+        style.setAdapter(new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, new String[]{"云朵与温柔短句", "只显示平静短句", "经典大马赛克"}));
+        style.setSelection("text".equals(settings.style()) ? 1 : "mosaic".equals(settings.style()) ? 2 : 0);
+        Ui.add(options, style, Ui.dp(this, 10));
+        Ui.add(options, Ui.text(this, "遮挡区域阻止触摸，避免点进被过滤内容；请从未遮挡处滑动。短句只表达鼓励与放松，不复述触发内容。", 12, Ui.MUTED, false), 0);
 
         Ui.add(page, Ui.button(this, "保存并开启过滤", true, v -> start()), Ui.dp(this, 10));
         Ui.add(page, Ui.button(this, "立即暂停", false, v -> {
@@ -126,7 +143,7 @@ public final class MainActivity extends Activity {
             }
         }), Ui.dp(this, 10));
         Ui.add(page, Ui.button(this, "管理无障碍权限", false, v -> explainAndOpen(false)), Ui.dp(this, 20));
-        Ui.add(page, Ui.text(this, "当前只按文字匹配，不会理解话题含义，也不会识别无文字的擦边图片。识别有延迟，滚动时可能短暂露出；此版本不保证零曝光。截图只用于本次识别，不落盘、不上传。", 12, Ui.MUTED, false), 0);
+        Ui.add(page, Ui.text(this, "云端默认关闭，只有在模型设置中明确同意后才上传截图。关键词过滤在本机完成。当前为实验版本，图文判断、定位和滚动跟随仍可能漏判或误判。", 12, Ui.MUTED, false), 0);
     }
 
     @android.annotation.SuppressLint("UseSwitchCompatOrMaterialCode")
@@ -144,14 +161,16 @@ public final class MainActivity extends Activity {
     private void save() {
         android.content.SharedPreferences.Editor editor = settings.prefs.edit()
                 .putString("keywords", keywords.getText().toString())
-                .putBoolean("ocr", ocr.isChecked()).putBoolean("expand", expand.isChecked());
+                .putBoolean("ocr", ocr.isChecked()).putBoolean("expand", expand.isChecked())
+                .putBoolean("strict", strict.isChecked())
+                .putString("cover_style", new String[]{"cloud", "text", "mosaic"}[style.getSelectedItemPosition()]);
         for (int i = 0; i < apps.length; i++) editor.putBoolean("app_" + FilterSettings.PACKAGES[i], apps[i].isChecked());
         editor.apply();
     }
 
     private void start() {
-        if (new KeywordMatcher(keywords.getText().toString()).isEmpty()) {
-            keywords.setError("请至少输入一个关键词");
+        if (new KeywordMatcher(keywords.getText().toString()).isEmpty() && !(settings.ai() && !settings.rules().trim().isEmpty())) {
+            keywords.setError("请填写快捷词，或先配置云端过滤要求");
             keywords.requestFocus();
             return;
         }
@@ -159,6 +178,7 @@ public final class MainActivity extends Activity {
         for (CheckBox app : apps) selected |= app.isChecked();
         if (!selected) { toast("请至少选择一个 App"); return; }
         save();
+        ((android.view.inputmethod.InputMethodManager) getSystemService(INPUT_METHOD_SERVICE)).hideSoftInputFromWindow(keywords.getWindowToken(), 0);
         if (!settings.consented() || !FilterRuntime.connected) { explainAndOpen(true); return; }
         settings.setEnabled(true);
         toast("已开启，请返回知乎、小红书或虎扑");
@@ -166,16 +186,13 @@ public final class MainActivity extends Activity {
 
     private void explainAndOpen(boolean enable) {
         new AlertDialog.Builder(this)
-                .setTitle("允许读取并遮挡选定 App 的内容？")
-                .setMessage("开启无障碍服务后，屏幕过滤会读取你选择的 App 的界面文字。"
-                        + (Build.VERSION.SDK_INT >= 34 ? "开启图片文字识别时，还会截取当前窗口进行本地中文识别。" : "当前设备使用兼容模式，不截屏，不识别图片中的文字。")
-                        + "命中关键词的区域会被不透明方块盖住。\n\n截图及读取的文字不保存、不上传；不会代替你点击或滑动。过滤设置保存在本机。\n\n你可以随时在本应用、快捷设置中暂停，或在系统设置中关闭服务。")
+                .setTitle("开启「屏幕过滤」无障碍服务")
+                .setMessage("需要此权限读取选定 App 的文字与位置、在启用识别时截图，并显示阻止触摸的遮挡卡片。不会代替你点击或滑动。\n\n接下来优先打开「屏幕过滤」详情；若系统只打开无障碍首页，请滑到最下方「已安装的服务」→「屏幕过滤」→开启。不要开启「屏幕朗读」。\n\n本地模式不上传。云端图文模式需在模型设置中另行同意，会向指定服务发送截图和过滤要求，可能含个人信息并产生费用。截图不在本机保存。\n\n可随时回到应用或快捷设置暂停。")
                 .setNegativeButton("暂不开启", null)
                 .setPositiveButton("同意并前往设置", (dialog, which) -> {
                     settings.prefs.edit().putBoolean("consent", true).apply();
                     if (enable) settings.setEnabled(true);
-                    Intent intent = new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS);
-                    startActivity(intent);
+                    AccessibilitySetup.open(this);
                 }).show();
     }
 

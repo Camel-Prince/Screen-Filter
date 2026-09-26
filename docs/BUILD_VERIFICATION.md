@@ -39,3 +39,20 @@
 - 安装包：`dist/ScreenFilter-0.2.0-compat-debug.apk`。
 - SHA-256：`981b6cfc939e67b0c40d93f364c6a65e904aaa1e63b0778c7e63c259f2694cd9`。
 - API 30–33 真机启动、无障碍权限、文字可读性、遮罩触摸和耗电均待测试。
+
+## 2026-09-26：0.3.0 图文体验版
+
+三轮修改经过编译/逻辑测试/静态复查，见 `ITERATIONS_0.3.0.md`。最终代码执行 `testDebugUnitTest lintDebug assembleDebug` 成功。
+
+- 最低 API 30，目标 API 35，versionCode 3 / versionName 0.3.0。
+- 30 项单元测试全部通过，0失败、0错误、0跳过。15项原有几何/匹配测试，加15项模型协议、HTTPS地址、响应拒绝、页面版本、唯一锚点/反向滚动、安慰主题和图文请求构造测试。
+- 最终 Android Lint：No issues found.
+- 合并清单增加 INTERNET；无 ACCESS_NETWORK_STATE。云端默认关闭，单独授权后才启用模型请求。安全窗口截图不绕过。
+- 签名验证通过（v2调试签名）；与0.2.0签名一致。包名不变，版本号递增，用于覆盖安装。
+- ZIP对齐检查通过（16KiB），不代替原生库设备兼容性验证。
+- APK：`dist/ScreenFilter-0.3.0-vision-debug.apk`，52,674,065字节。
+- APK SHA-256：`e6034a97f02868140cc9798265ab1e6ca9dcd86c594b5ea7d7c05945a48b0021`。
+- ZIP：`ScreenFilter-0.3.0-vision-transfer.zip`，52,674,233字节，仅包含同一APK，解压后逐字节校验一致。
+- ZIP SHA-256：`14aa8e920a22597bca545b02ad86cadd8e43883367e5908d09922d807c7c14a9`。
+
+验证边界：没有连接手机或Android模拟器，没有模型Key，未执行新版真机UI、触摸、截图、耗电、真实模型API/定位准确率测试。内置红蓝方块测试供用户在手机上验证连接。不得将30项逻辑测试描述为30项真机测试。

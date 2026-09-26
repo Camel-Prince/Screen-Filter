@@ -5,4 +5,11 @@
     <item name="target_hupu" type="id" />
     <item name="ocr_enabled" type="id" />
     <item name="expand_cards" type="id" />
+    <item name="model_url" type="id" />
+    <item name="model_name" type="id" />
+    <item name="model_key" type="id" />
+    <item name="model_rules" type="id" />
+    <item name="model_enabled" type="id" />
+    <item name="strict_enabled" type="id" />
+    <item name="cover_style" type="id" />
 </resources>

@@ -1,87 +1,77 @@
-# 屏幕过滤 · Android 基线
+# 屏幕过滤 · Android 图文体验版
 
-面向 Android 11+（API 30+）的本地关键词遮挡原型；Android 14+ 支持额外的窗口 OCR，较低版本使用不截屏的界面文字兼容模式。优先处理知乎 `com.zhihu.android`、小红书 `com.xingin.xhs`、虎扑 `com.hupu.games` 的标准版本。**已配置目标包名不等于已完成这三个 App 的真机适配。**
+为知乎、小红书、虎扑的指定内容盖上不透明卡片。**0.3.0 加入通义千问图文过滤、触摸拦截、云朵与温柔短句；仍是需要真机验证的实验版本，不能保证零曝光。**
 
-已生成侧载安装包：`dist/ScreenFilter-0.2.0-compat-debug.apk`。本次编译、15 项单元测试和静态检查均通过；尚未真机验收，详见 [构建验证记录](docs/BUILD_VERIFICATION.md)。
+最低 Android 11 / API 30，不是鸿蒙 NEXT 原生应用。用户已在 nova 12 Ultra / HarmonyOS 4.2.0 安装运行 0.2.0，并报告滑动闪烁、首次遮挡延迟和点击穿透。0.3.0 针对这些问题修改，尚未收到新版真机结果。
 
-## 下载安装包
+## 手机下载
 
-- **[打开 0.2.0 兼容测试版下载页](https://github.com/Camel-Prince/Screen-Filter/releases/tag/v0.2.0)**：展开页面下方 **Assets**，选择 `ScreenFilter-0.2.0-compat-debug.apk`，不要选择 Source code。
-- [直接下载 0.2.0 APK](https://github.com/Camel-Prince/Screen-Filter/releases/download/v0.2.0/ScreenFilter-0.2.0-compat-debug.apk)：Android 11+；Android 11–13 使用界面文字模式，Android 14+ 可开启窗口 OCR。
-- [手机下载 ZIP 后解压安装](https://github.com/Camel-Prince/Screen-Filter/releases/download/v0.2.0/ScreenFilter-0.2.0-compat-transfer.zip)：APK 下载一直停在 100% 时可尝试。使用手机文件管理解压，再打开其中的 APK；内容与直接下载的 APK 完全相同，不是新的兼容性修复版本。
-- [备用仓库原始文件下载](https://github.com/Camel-Prince/Screen-Filter/raw/refs/heads/main/dist/ScreenFilter-0.2.0-compat-debug.apk)：此入口会跳转到 `raw.githubusercontent.com`，部分网络可能无法访问。
-- [下载 0.1.0 原始测试版 APK](https://github.com/Camel-Prince/Screen-Filter/raw/refs/heads/main/dist/ScreenFilter-0.1.0-debug.apk)：仅 Android 14+。
-- [SHA-256 校验值](dist/SHA256SUMS.txt)。两个安装包均为调试签名的测试版，尚未完成真机验收。
+- [0.3.0 下载页](https://github.com/Camel-Prince/Screen-Filter/releases/tag/v0.3.0)
+- [下载 ZIP，解压后安装 APK](https://github.com/Camel-Prince/Screen-Filter/releases/download/v0.3.0/ScreenFilter-0.3.0-vision-transfer.zip)：此前手机 APK 下载停在 100%，建议继续用 ZIP。
+- [直接下载 APK](https://github.com/Camel-Prince/Screen-Filter/releases/download/v0.3.0/ScreenFilter-0.3.0-vision-debug.apk)
+- [SHA-256 校验值](dist/SHA256SUMS.txt)
+- [旧版 0.2.0](https://github.com/Camel-Prince/Screen-Filter/releases/tag/v0.2.0)
 
-可直接在手机浏览器下载，或在电脑下载后通过微信/QQ 发送为文件。请优先使用 **0.2.0-compat**；若通讯软件将后缀改为 `.apk.1`，保存到手机后改回 `.apk` 再安装。
+APK 为相同包名、调试签名的测试包。正常情况下直接覆盖安装，保留本地关键词；不需要先卸载。ZIP 内 APK 与独立 APK 一致。
 
-如果手机能打开 GitHub 网页，却无法下载文件，可能是下载域名的网络访问问题。可先试上述 Releases 入口；它仍依赖 GitHub 的下载网络。如果两个入口都失败，可在电脑下载后通过微信文件传输助手、QQ 或 USB 传到手机。浏览器明确提示风险拦截时，请保留提示信息以便区分网络故障与系统下载限制。
+## 开启与测试
 
-## 当前功能
+1. 打开「屏幕过滤」，填入一条页面上确实存在的独特快捷词，勾选目标 App。
+2. 点「保存并开启过滤」，在系统中开启「屏幕过滤」无障碍服务。应用优先尝试服务详情深链，厂商不支持时回到无障碍首页并提示：向下滑 → 已安装的服务 → 屏幕过滤。系统没有通用的强制滚动到页底接口。
+3. 先验证本地关键词：标题出现遮挡；慢慢滑动；点击遮挡应不能打开卡片；从旁边未遮挡区域滑动。暂停后遮挡消失。
+4. 打开「配置通义千问」，填写地址、支持图文的模型名称、API Key 和自然语言过滤要求。默认模型 `qwen3-vl-flash`，可改为账户可用的视觉模型。Base URL 和完整 `/chat/completions` 地址均可。
+5. 默认地址 `https://dashscope.aliyuncs.com/compatible-mode/v1`；若百炼控制台提供业务空间专属地址，请按控制台填写。地址、Key 和模型地域必须匹配。API Key 只在手机输入，不发到聊天或仓库。
+6. 点「保存并测试图文连接」，确认接收地址。测试只发送内置的随机红蓝方块图，检查是否正确定位红色方块，显示耗时；不读取目标 App。这能检验接通及基本图文定位，不是内容审核准确率测试。
+7. 打开「开启云端图文过滤」，保存并同意截图上传说明，返回首页点「保存并开启过滤」。在静止图文页面等候判断，查看遮挡和首页最近状态。先用普通明确主题测试，再测试实际过滤规则。
 
-- 用户自定义关键词（逐行或逗号分隔，最多 100 个），命中任意关键词就遮挡。
-- 界面文字快速匹配；Android API 34+ 额外使用内置 ML Kit 中文 OCR。API 30–33 只读取无障碍界面文字，不截屏，OCR 开关置灰。
-- 匹配忽略大小写、全角/半角和空白；使用字面子串，不是语义分类或正则表达式。
-- 优先根据无障碍树中的列表/网格子项推断卡片边界；无可靠边界时只遮文字块。不会猜测小红书整屏两列布局，也不保证识别所有版本的卡片。
-- 完全不透明的装饰性大方块遮罩，非原图像素化；避免保留图像轮廓。
-- 读取新坐标更新遮罩；页面变化/滚动后立即丢弃旧结果。当前是轮询重新定位，**不是光流跟踪或逐帧运动预测**。
-- 暂停按钮、系统快捷设置开关、服务权限说明、应用内模拟演示。
-- 仅本地处理，截图和读取内容不写文件、不打印日志；不申请网络权限。
+本地快捷词用于快速命中；自然语言要求由模型分析图文。关闭云端后仅本地规则工作，API 34+ 还可选本地中文 OCR。快捷设置开关、首页「立即暂停」都可停用。
 
-## 使用
+## 0.3.0 的变化
 
-已针对用户的 nova 12 Ultra / HarmonyOS 4.2.0 增加较低 Android API 的兼容路径，但尚未读取这台手机的实际 API 等级，也未进行真机验收。它不是鸿蒙 NEXT 原生版本。
+- **刷新不先清空**：读取完新坐标后一次更新本地遮挡；异步结果作废与可见遮挡分离。节点轮询目标间隔 60 ms，事件尽快触发扫描。这是调度设置，不是实测时延保证。
+- **跟随文字锚点**：模型命中区域若有唯一可见文字，跟随其位置更新；锚点消失、重复或尺寸改变时放弃关联，避免遮错卡片。没有锚点的图像区域在页面变化后需要重判，不是光流跟踪。
+- **遮挡处阻止触摸**：每个遮挡区域使用独立窗口，消费触摸，未遮挡部分正常交互。无法从遮挡内部开始拖动，需从旁边滑动。没有自动点击或手势注入。
+- **通义千问图文请求**：静止至少 350 ms 后截图，最长边缩到 1280 像素；至多一个在途请求，起始间隔至少 3 秒，失败退避 15 秒。结果须为严格校验的矩形数组，过时/超时/格式错误不放行。
+- **温柔卡片**：云朵与短句、纯短句、经典马赛克三种样式。模型只能选择平静/鼓励/休息主题，显示本地短句，不回显被过滤话题，不作心理诊断。
 
-1. 安装调试 APK（若已有构建，见 `dist/`）。最低 Android 11 / API 30；HarmonyOS 版本号不等于 Android API 等级，是否可安装及运行仍需实机确认。
-2. 打开「屏幕过滤」，填写关键词，选中需要过滤的 App。
-3. 点击「保存并开启过滤」，阅读说明并同意，到系统无障碍设置中开启「屏幕过滤」。
-4. 返回目标 App。可先用该页面上确实存在的独特文字测试，避免把导航标签设成屏蔽词。
-5. 下拉快捷设置中的「屏幕过滤」可以暂停；也可随时回到应用点击「立即暂停」。
+## 设备能力与延迟
 
-首次使用侧载 APK 时，部分系统可能阻止打开无障碍服务。若系统提示「受限设置」，按手机系统提供的应用信息页面说明处理；不同厂商步骤不同。服务被系统关闭后需重新开启。卸载应用即可移除设置。
+| 能力 | API 30–33（本次华为设备进入旧系统兼容路径） | API 34+ |
+|---|---|---|
+| 本地界面文字 | 支持，依赖目标 App 提供文字 | 支持 |
+| 本地图片文字 OCR | 不启用 | 支持 |
+| 云端图文 | 尝试屏幕截图后裁剪到目标窗口，需真机确认系统截图能力 | 目标窗口独立截图 |
+| 已有遮挡 | 保留，不为取图反复撤罩；上传时将遮挡处涂灰 | 截图可排除无障碍遮挡 |
+| 先遮后审 | 禁用：系统不能独立读取遮挡下方窗口 | 可选：页面变化后遮住窗口，模型成功返回后放行未命中部分 |
 
-## 构建
+先遮后审会阻止当前窗口操作，提示卡可点按暂停；连接失败继续遮挡。无论哪种模式，都依赖系统通知和截图时机，不能保证内容首帧从未显示。旧系统兼容路径尤其存在模型等待期间的可见时间。当前不适用于视频逐帧审核。
 
-需要 JDK 17、Android SDK Platform 35、Build Tools 35.0.0。Gradle Wrapper 使用 8.11.1，Android Gradle Plugin 使用 8.9.2。
+## 权限与数据
 
-在 Android Studio 中打开本目录，让其安装 SDK 和同步依赖；或者配置 `ANDROID_HOME` / `local.properties` 后执行：
+必需权限是用户手动开启的无障碍服务，用于读取文字/位置、按需截图和绘制遮挡；不需目标 App 授权，也不另申请普通悬浮窗权限。选定包名为知乎 `com.zhihu.android`、小红书 `com.xingin.xhs`、虎扑 `com.hupu.games`；分身、极速版及不同页面结构未验证。
+
+- 云端默认关闭。开启前会明确说明截图、过滤要求、接收地址及可能的调用费用。更换地址或模型需重新确认。
+- 截图可能含用户名、私信和其他个人信息。输入法、锁屏、非目标 App 暂停；可识别的输入/密码框会涂灰；无法保证识别所有敏感内容。旧系统的其他应用多窗口场景暂停截图。
+- 截图和读取文字不在本机落盘、不打印日志。上传后服务商的数据处理政策适用，已经发送的内容无法撤回。
+- API Key 使用 Android Keystore 的 AES-GCM 加密保存，不显示在状态或异常输出里。可「关闭云端并删除密钥」。模型配置页面禁止系统截图、禁止密钥状态恢复/自动填充；不申请存储权限。
+- 仅向配置的 HTTPS 地址发送请求，不跟随重定向，不绕过安全窗口。应用禁用备份和设备迁移。
+
+## 验证与开发
+
+见 [构建验证](docs/BUILD_VERIFICATION.md)、[三轮迭代记录](docs/ITERATIONS_0.3.0.md)、[真机清单](docs/DEVICE_TEST_PLAN.md)。编译、单元测试、静态检查不能代替华为手机触摸/截图验证，当前也没有用户 Key 做真实云端调用验收。
+
+需要 JDK 17、SDK Platform 35、Build Tools 35.0.0。Gradle 8.11.1、AGP 8.9.2：
 
 ```sh
 ./gradlew testDebugUnitTest lintDebug assembleDebug
 ```
 
-输出：`app/build/outputs/apk/debug/app-debug.apk`。调试包用于侧载测试，不是商店发行签名版本。
+输出 `app/build/outputs/apk/debug/app-debug.apk`。
 
-## 为什么用无障碍服务
+## 官方依据
 
-此基线使用用户主动授权的 `AccessibilityService` 和 `TYPE_ACCESSIBILITY_OVERLAY`；仅 API 34+ 调用 `takeScreenshotOfWindow`。不使用 MediaProjection，不需要单独申请普通悬浮窗权限；无障碍授权是必需的。Android 14 的窗口截图能排除无障碍遮罩，避免识别自身。遮罩设置为不接收触摸，不代理点击或滑动，不请求手势控制。
-
-服务接收全局窗口变化事件以知道何时离开目标 App，但只遍历选中包名的界面内容；仅 API 34+ 且 OCR 开启时截取其当前活动窗口。输入法出现、锁屏或非目标窗口时停止。设置页中的开关还受用户同意状态约束；单独在系统中打开服务不会绕过产品内说明。
-
-## 数据与边界
-
-- 应用自身保存关键词、选择的 App、授权说明同意状态及开关；依赖组件可能维护本地运行元数据。禁用云端备份和设备迁移。
-- OCR 模型随 APK 打包；合并清单移除依赖带入的网络权限。内存截图在识别完成后释放。
-- 文字节点轮询目标间隔 120 ms，OCR 请求最短间隔 900 ms，均为调度配置，非实测延迟或 FPS 保证。OCR 单次在途，不堆积帧；旧页面结果通过版本标记作废。
-- OCR 遮罩最长保留 1600 ms；截图失败退避 5 秒，界面文字路径继续工作。
-- “擦边”“软色情”等视觉语义、同义话题、讽刺及无文字图片不在当前能力范围。
-- API 30–33 兼容模式无法识别不向无障碍服务提供文字的内容，尤其是图片内文字及部分自绘页面。API 34+ 无卡片结构的自绘界面只能依赖 OCR 文本块。文字可能被拆成多个节点/块而漏检；不同内容的误合并也可能误遮。
-- 滚动中会短暂清除过期遮罩并重新定位，存在曝光、闪烁、延迟；不保证用户完全看不到内容。
-- 安全窗口、特殊页面、浮窗、多窗口、旋转及不同厂商系统需要真机验收；遇到受保护截图不绕过保护。
-- 当前设置按 App 生效，不区分首页/详情页；应谨慎选择容易出现在导航栏的词。
-- 应用内演示使用合成卡片，不是目标 App 的测试结果。发布前还需按目标商店要求完成无障碍权限用途申报与审核。
-
-## 文件导航
-
-- `MainActivity.java`：设置、授权说明与开关。
-- `FilterAccessibilityService.java`：窗口选择、读取、截图、OCR 与生命周期。
-- `NodeReader.java`：从界面树提取文字和候选卡片。
-- `core/`：可独立测试的关键词与矩形策略。
-- `MosaicView.java`：不透明遮罩。
-- `docs/DEVICE_TEST_PLAN.md`：三个 App 的真机验收步骤。
-
-## 依据
-
-- [Android 无障碍服务与窗口截图](https://developer.android.com/reference/android/accessibilityservice/AccessibilityService#takeScreenshotOfWindow(int,java.util.concurrent.Executor,android.accessibilityservice.AccessibilityService.TakeScreenshotCallback))
-- [Android 窗口类型与触摸规则](https://developer.android.com/reference/android/view/WindowManager.LayoutParams)
-- [ML Kit 本地中文 OCR](https://developers.google.com/ml-kit/vision/text-recognition/v2/android)
+- [Android 无障碍截图：窗口截图可排除遮挡](https://developer.android.com/reference/android/accessibilityservice/AccessibilityService)
+- [Android 窗口与触摸规则](https://developer.android.com/reference/android/view/WindowManager.LayoutParams)
+- [通义千问图像理解](https://help.aliyun.com/zh/model-studio/vision)
+- [百炼兼容接口与地域地址](https://help.aliyun.com/zh/model-studio/qwen-api-via-openai-chat-completions)
+- [百炼 API Key](https://help.aliyun.com/zh/model-studio/get-api-key)

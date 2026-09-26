@@ -10,26 +10,36 @@ import java.util.List;
 
 final class NodeReader {
     record TextRegion(String text, Box bounds) {}
-    record Snapshot(List<TextRegion> texts, List<Box> cards, long fingerprint) {}
+    record Snapshot(List<TextRegion> texts, List<Box> cards, List<Box> privateAreas, long fingerprint) {
+        List<com.screenfilter.app.core.MaskMemory.Anchor> anchors() {
+            List<com.screenfilter.app.core.MaskMemory.Anchor> result = new ArrayList<>();
+            for (TextRegion text : texts) result.add(new com.screenfilter.app.core.MaskMemory.Anchor(text.text(), text.bounds()));
+            return result;
+        }
+    }
     private final List<TextRegion> texts = new ArrayList<>();
     private final List<Box> cards = new ArrayList<>();
+    private final List<Box> privateAreas = new ArrayList<>();
     private int visited;
     private long fingerprint = 1;
 
     Snapshot read(AccessibilityNodeInfo root, Box window) {
         walk(root, window, false, 0);
         return new Snapshot(java.util.Collections.unmodifiableList(new ArrayList<>(texts)),
-                java.util.Collections.unmodifiableList(new ArrayList<>(cards)), fingerprint);
+                java.util.Collections.unmodifiableList(new ArrayList<>(cards)),
+                java.util.Collections.unmodifiableList(new ArrayList<>(privateAreas)), fingerprint);
     }
 
     private void walk(AccessibilityNodeInfo node, Box window, boolean parentList, int depth) {
         if (node == null || ++visited > 1200 || depth > 36 || !node.isVisibleToUser()) return;
         // Do not inspect an input field, password field, or its descendants.
-        if (node.isPassword() || node.isEditable()) return;
         Rect rect = new Rect();
         node.getBoundsInScreen(rect);
         Box bounds = new Box(rect.left, rect.top, rect.right, rect.bottom).intersect(window);
         if (bounds.area() == 0) return;
+        if (node.isPassword() || node.isEditable()) { privateAreas.add(bounds); return; }
+        // Geometry also invalidates image-only screens, even when no accessible text exists.
+        fingerprint = 31 * fingerprint + bounds.hashCode();
         if (parentList && RegionPolicy.plausibleCard(bounds, window)) cards.add(bounds);
         CharSequence raw = node.getText();
         CharSequence description = node.getContentDescription();

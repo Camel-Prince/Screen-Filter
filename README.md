@@ -8,6 +8,7 @@
 
 - **[打开 0.2.0 兼容测试版下载页](https://github.com/Camel-Prince/Screen-Filter/releases/tag/v0.2.0)**：展开页面下方 **Assets**，选择 `ScreenFilter-0.2.0-compat-debug.apk`，不要选择 Source code。
 - [直接下载 0.2.0 APK](https://github.com/Camel-Prince/Screen-Filter/releases/download/v0.2.0/ScreenFilter-0.2.0-compat-debug.apk)：Android 11+；Android 11–13 使用界面文字模式，Android 14+ 可开启窗口 OCR。
+- [手机下载 ZIP 后解压安装](https://github.com/Camel-Prince/Screen-Filter/releases/download/v0.2.0/ScreenFilter-0.2.0-compat-transfer.zip)：APK 下载一直停在 100% 时可尝试。使用手机文件管理解压，再打开其中的 APK；内容与直接下载的 APK 完全相同，不是新的兼容性修复版本。
 - [备用仓库原始文件下载](https://github.com/Camel-Prince/Screen-Filter/raw/refs/heads/main/dist/ScreenFilter-0.2.0-compat-debug.apk)：此入口会跳转到 `raw.githubusercontent.com`，部分网络可能无法访问。
 - [下载 0.1.0 原始测试版 APK](https://github.com/Camel-Prince/Screen-Filter/raw/refs/heads/main/dist/ScreenFilter-0.1.0-debug.apk)：仅 Android 14+。
 - [SHA-256 校验值](dist/SHA256SUMS.txt)。两个安装包均为调试签名的测试版，尚未完成真机验收。

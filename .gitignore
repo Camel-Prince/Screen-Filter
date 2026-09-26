@@ -6,6 +6,8 @@ local.properties
 .DS_Store
 .tools/
 # Release APKs in dist/ are intentionally versioned for direct downloads.
+# Alternate transfer archives are distributed as GitHub Release assets only.
+dist/*-transfer.zip
 *.jks
 *.keystore
 key.properties

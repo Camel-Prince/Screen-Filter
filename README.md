@@ -4,6 +4,17 @@
 
 最低 Android 11 / API 30，不是鸿蒙 NEXT 原生应用。用户已在 nova 12 Ultra / HarmonyOS 4.2.0 安装运行 0.2.0，并报告滑动闪烁、首次遮挡延迟和点击穿透。0.3.0 针对这些问题修改，尚未收到新版真机结果。
 
+## 0.3.2 模型运行日志
+
+首页或模型配置页点击「查看模型运行日志」。目标 App 的每次图文识别、内置连接测试都有独立编号，记录截图结果、模型名称、服务主机、图片尺寸、规则长度、请求发送、HTTP 状态码、解析命中区域与坐标、页面复核、最终采用/作废/失败原因及累计耗时。没有发出请求时也会记录条件变化，例如云端未启用、键盘打开、离开目标窗口或多窗口限制。
+
+- 默认不保存截图、API Key、规则正文或页面文字。日志仅存于本机应用私有目录，不自动上传、不参与备份。保留至多 400 条事件 / 256 KiB，自动删除最早记录，重启后可查。
+- 「记录服务原始文字回复」默认关闭，单独确认后记录后续请求的返回正文（包括服务报错），每条约 6000 字符上限，过滤配置密钥、常见密钥格式和图片数据。正文可能包含帖子文字或其他个人信息；关闭开关不删除已有日志，可点击「清空日志」。
+- 可复制最近一次识别或全部日志与当前状态，便于反馈；包含原始回复时会提示先检查个人信息。清空后，已清除请求的迟到回调不会重新写回旧日志。
+- 建议在小红书相关帖子停留约 10–15 秒，返回日志页查看：没有截图 / 请求未发 / HTTP 错误 / 模型零命中 / 页面变化作废 / 已采用，能区分问题发生在哪一步。升级前的请求不能补录。
+
+保留 0.3.1 的请求取消修复和截图复核。日志功能不代表已验证真实帖子识别准确率，仍需用户手机反馈。
+
 ## 0.3.1 小红书排查修订
 
 用户反馈开启秋招、考研、论文辅导机构过滤后，相关帖子仍未遮挡。手机诊断和真实模型结果尚未取得，不能断定为模型漏判。
@@ -16,9 +27,9 @@
 
 ## 手机下载
 
-- [0.3.1 下载页](https://github.com/Camel-Prince/Screen-Filter/releases/tag/v0.3.1)
-- [下载 ZIP，解压后安装 APK](https://github.com/Camel-Prince/Screen-Filter/releases/download/v0.3.1/ScreenFilter-0.3.1-vision-transfer.zip)：此前手机 APK 下载停在 100%，建议继续用 ZIP。
-- [直接下载 APK](https://github.com/Camel-Prince/Screen-Filter/releases/download/v0.3.1/ScreenFilter-0.3.1-vision-debug.apk)
+- [0.3.2 下载页](https://github.com/Camel-Prince/Screen-Filter/releases/tag/v0.3.2)
+- [下载 ZIP，解压后安装 APK](https://github.com/Camel-Prince/Screen-Filter/releases/download/v0.3.2/ScreenFilter-0.3.2-vision-transfer.zip)：此前手机 APK 下载停在 100%，建议继续用 ZIP。
+- [直接下载 APK](https://github.com/Camel-Prince/Screen-Filter/releases/download/v0.3.2/ScreenFilter-0.3.2-vision-debug.apk)
 - [SHA-256 校验值](dist/SHA256SUMS.txt)
 - [旧版 0.2.0](https://github.com/Camel-Prince/Screen-Filter/releases/tag/v0.2.0)
 
@@ -62,13 +73,13 @@ APK 为相同包名、调试签名的测试包。正常情况下直接覆盖安�
 
 - 云端默认关闭。开启前会明确说明截图、过滤要求、接收地址及可能的调用费用。更换地址或模型需重新确认。
 - 截图可能含用户名、私信和其他个人信息。输入法、锁屏、非目标 App 暂停；可识别的输入/密码框会涂灰；无法保证识别所有敏感内容。旧系统的其他应用多窗口场景暂停截图。
-- 截图和读取文字不在本机落盘、不打印日志。上传后服务商的数据处理政策适用，已经发送的内容无法撤回。
-- API Key 使用 Android Keystore 的 AES-GCM 加密保存，不显示在状态或异常输出里。可「关闭云端并删除密钥」。模型配置页面禁止系统截图、禁止密钥状态恢复/自动填充；不申请存储权限。
+- 截图和无障碍读取的页面文字不在本机落盘。默认诊断日志仅记录流程和坐标等元数据；单独开启原始回复记录后，服务返回正文可能包含页面文字，保存在本机，可清空。上传后服务商的数据处理政策适用，已经发送的内容无法撤回。
+- API Key 使用 Android Keystore 的 AES-GCM 加密保存，不显示在状态或异常输出里。可「关闭云端并删除密钥」。模型配置和日志页面禁止系统截图，密钥禁止状态恢复/自动填充；不申请存储权限。
 - 仅向配置的 HTTPS 地址发送请求，不跟随重定向，不绕过安全窗口。应用禁用备份和设备迁移。
 
 ## 验证与开发
 
-见 [构建验证](docs/BUILD_VERIFICATION.md)、[三轮迭代记录](docs/ITERATIONS_0.3.0.md)、[真机清单](docs/DEVICE_TEST_PLAN.md)。编译、单元测试、静态检查不能代替华为手机触摸/截图验证，当前也没有用户 Key 做真实云端调用验收。0.3.1新增诊断和重复事件/截图复核回归检查。
+见 [构建验证](docs/BUILD_VERIFICATION.md)、[三轮迭代记录](docs/ITERATIONS_0.3.0.md)、[真机清单](docs/DEVICE_TEST_PLAN.md)。0.3.2 的45项单元测试和Lint通过。编译、单元测试、静态检查不能代替华为手机触摸/截图验证，当前也没有用户 Key 做真实云端调用验收。
 
 需要 JDK 17、SDK Platform 35、Build Tools 35.0.0。Gradle 8.11.1、AGP 8.9.2：
 

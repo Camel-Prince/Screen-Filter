@@ -57,7 +57,7 @@ public final class MainActivity extends Activity {
         setContentView(scroll);
         Ui.insets(scroll);
 
-        Ui.add(page, Ui.text(this, "SCREEN FILTER  /  0.3.1 图文排查版", 11, Ui.GREEN, true), Ui.dp(this, 12));
+        Ui.add(page, Ui.text(this, "SCREEN FILTER  /  0.3.2 模型日志版", 11, Ui.GREEN, true), Ui.dp(this, 12));
         Ui.add(page, Ui.text(this, "把屏幕，留给喜欢的。", 27, Ui.INK, true), Ui.dp(this, 10));
         Ui.add(page, Ui.text(this, "本地关键词快速遮挡 · 通义千问图文判断\n留一小块安静，给自己。",
                 14, Ui.MUTED, false), Ui.dp(this, 22));
@@ -67,10 +67,12 @@ public final class MainActivity extends Activity {
         Ui.add(stateCard, status, Ui.dp(this, 8));
         diagnostics = Ui.text(this, "", 13, Ui.MUTED, false);
         Ui.add(stateCard, diagnostics, Ui.dp(this, 8));
+        Ui.add(stateCard, Ui.button(this, "查看模型运行日志", true,
+                v -> startActivity(new Intent(this, ModelLogActivity.class))), Ui.dp(this, 8));
         Ui.add(stateCard, Ui.button(this, "复制诊断信息", false, v -> {
             android.content.ClipboardManager clipboard = getSystemService(android.content.ClipboardManager.class);
             clipboard.setPrimaryClip(android.content.ClipData.newPlainText("屏幕过滤诊断",
-                    "ScreenFilter 0.3.1 / API " + Build.VERSION.SDK_INT + "\n" + status.getText() + "\n" + diagnostics.getText()));
+                    "ScreenFilter 0.3.2 / API " + Build.VERSION.SDK_INT + "\n" + status.getText() + "\n" + diagnostics.getText()));
             toast("已复制运行状态，不含截图、规则或密钥");
         }), Ui.dp(this, 8));
         Ui.add(stateCard, Ui.text(this, "切换到其他 App、锁屏或弹出输入法时暂停遮挡。", 13, Ui.MUTED, false), 0);

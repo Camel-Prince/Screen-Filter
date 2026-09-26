@@ -52,6 +52,8 @@ public final class FilterAccessibilityService extends AccessibilityService {
     private String selectionReason = "尚未进入选定 App", lastTarget = "无";
     private int captureCount, screenshotCount, sentCount, replyCount, appliedCount, discardCount, lastRegions, textCount;
     private long lastScreenshotAt;
+    private ModelLog.Trace activeTrace;
+    private String cancellationReason = "", loggedAvailability = "";
     private record Target(String packageName, int windowId, Box bounds) {}
     private record WindowTarget(Target target, AccessibilityNodeInfo root) {}
 
@@ -87,6 +89,7 @@ public final class FilterAccessibilityService extends AccessibilityService {
         if (getPackageName().equals(source)) return;
         if (current != null && source.equals(current.packageName())
                 && event.getEventType() == AccessibilityEvent.TYPE_VIEW_SCROLLED) {
+            noteCancellation("页面正在滚动");
             dirty = true;
             gate.change(); // Invalidate asynchronous results, but do not clear the visible cover.
             stableSince = SystemClock.uptimeMillis();
@@ -130,6 +133,7 @@ public final class FilterAccessibilityService extends AccessibilityService {
         boolean changedEvidence = gate.observe(snapshot.fingerprint());
         boolean changed = changedEvidence || dirty;
         if (changedEvidence) {
+            noteCancellation("页面文字或位置发生变化");
             client.cancel(); stableSince = SystemClock.uptimeMillis();
         }
         fingerprint = snapshot.fingerprint(); dirty = false;
@@ -141,7 +145,7 @@ public final class FilterAccessibilityService extends AccessibilityService {
         FilterRuntime.status = "本地 " + nodeMasks.size() + " 处 · 图文 " + memory.masks().size() + " 处"
                 + (detail.isEmpty() ? "" : " · " + detail);
         if (settings.ai() && legacyCaptureBlocked) {
-            if (inFlight) { gate.change(); client.cancel(); }
+            if (inFlight) { noteCancellation("兼容截图出现多个应用窗口"); gate.change(); client.cancel(); }
             detail = "兼容截图检测到多个应用窗口，云端暂停；本地词仍工作";
             return;
         }
@@ -211,6 +215,11 @@ public final class FilterAccessibilityService extends AccessibilityService {
         // Legacy capture includes overlays: preserve them and grey them out in the upload.
         if (Build.VERSION.SDK_INT < 34) redact.addAll(covers.visible());
         final KeywordMatcher capturedMatcher = matcher;
+        final ModelLog.Trace trace = ai ? ModelLog.get(this).beginRecognition(lastTarget) : null;
+        activeTrace = trace; cancellationReason = "";
+        if (trace != null) trace.info("申请截图", (Build.VERSION.SDK_INT >= 34 ? "独立窗口截图" : "兼容屏幕截图，裁剪到目标窗口")
+                + " · Android API " + Build.VERSION.SDK_INT + "\n可读文字 " + snapshot.texts().size()
+                + " 处 · 本地命中 " + nodeMasks.size() + " 处 · 需涂灰区域 " + redact.size() + " 处");
         captureCount++;
         inFlight = true; requestStarted = SystemClock.uptimeMillis();
         nextCaptureAt = requestStarted + (ai ? 3000 : 900);
@@ -219,6 +228,7 @@ public final class FilterAccessibilityService extends AccessibilityService {
         TakeScreenshotCallback callback = new TakeScreenshotCallback() {
             @Override public void onSuccess(ScreenshotResult screenshot) {
                 screenshotCount++; lastScreenshotAt = SystemClock.uptimeMillis();
+                if (trace != null) trace.info("截图成功", "已取得图像，开始检查页面有效性并处理隐私区域；截图不保存。");
                 if (!fresh(target, version)) { screenshot.getHardwareBuffer().close(); discarded("截图期间页面变化"); return; }
                 if (Build.VERSION.SDK_INT < 34) redact.addAll(covers.visible());
                 final VisionClient.Config config;
@@ -235,7 +245,7 @@ public final class FilterAccessibilityService extends AccessibilityService {
                         if (hardware == null) throw new IllegalStateException();
                         bitmap = hardware.copy(Bitmap.Config.ARGB_8888, true);
                     } catch (RuntimeException ignored) {
-                        // No screen pixels, text, keys, or provider response are logged.
+                        // Only a fixed conversion error is logged, never exception payloads.
                     } finally {
                         if (hardware != null) hardware.recycle(); screenshot.getHardwareBuffer().close();
                     }
@@ -256,11 +266,12 @@ public final class FilterAccessibilityService extends AccessibilityService {
                         if (ai) {
                             int[] evidence = sample(ready);
                             var regions = client.classify(ready, config, () -> !destroyed && gate.version() == version && settings.enabled() && settings.ai(),
-                                    () -> main.post(() -> { sentCount++; publishDiagnostics(); }));
+                                    () -> main.post(() -> { sentCount++; publishDiagnostics(); }), trace);
                             main.post(() -> {
                                 replyCount++;
                                 if (!fresh(target, version)) { discarded("模型返回时页面已变化"); return; }
                                 detail = "模型已返回，正在复核截图";
+                                if (trace != null) trace.info("复核截图", "检查模型判断期间画面是否变化，复核图不上传。");
                                 verifyImage(target, snapshot, version, redact, evidence, regions);
                             });
                         } else {
@@ -334,6 +345,10 @@ public final class FilterAccessibilityService extends AccessibilityService {
                             gate.reviewed(version);
                             detail = "模型完成：命中 " + regions.size() + " 处 · " + (SystemClock.uptimeMillis() - requestStarted) / 1000.0 + " 秒";
                             render(); publishDiagnostics();
+                            if (activeTrace != null) activeTrace.info("结果已采用", "截图复核通过 · 本次模型命中 " + regions.size()
+                                    + " 处 · 当前显示遮挡 " + covers.visible().size() + " 处（含本地命中）"
+                                    + (regions.isEmpty() ? "\n模型没有要求新增遮挡。若与预期不符，可开启原始回复记录后再测。" : ""));
+                            activeTrace = null;
                         });
                     });
                 }
@@ -355,6 +370,8 @@ public final class FilterAccessibilityService extends AccessibilityService {
     }
 
     private void discarded(String reason) {
+        if (activeTrace != null) activeTrace.problem("结果作废", reason + (cancellationReason.isEmpty() ? "" : " · " + cancellationReason));
+        activeTrace = null;
         inFlight = false; discardCount++;
         if (!destroyed) { detail = "结果作废：" + reason; publishDiagnostics(); }
     }
@@ -366,6 +383,23 @@ public final class FilterAccessibilityService extends AccessibilityService {
                 + "\n模型返回 " + replyCount + " · 复核采用 " + appliedCount + " · 最近命中 " + lastRegions + " 处"
                 + "\n作废 " + discardCount + " 次 · " + selectionReason
                 + (detail.isEmpty() ? "" : "\n最近状态：" + detail);
+        String availability = !settings.enabled() ? "过滤已暂停"
+                : !settings.ai() ? "云端图文未开启，本地关键词可单独工作"
+                : !settings.hasRules() ? "缺少过滤要求"
+                : !awake() ? "锁屏或息屏，暂停识别"
+                : current == null ? selectionReason
+                : legacyCaptureBlocked ? "兼容截图检测到多个应用窗口，云端暂停"
+                : "已进入" + lastTarget + "，停稳后进行图文判断";
+        if (!availability.equals(loggedAvailability)) {
+            loggedAvailability = availability;
+            ModelLog.get(this).begin("运行状态").info("识别条件", availability);
+        }
+    }
+
+    private void noteCancellation(String reason) {
+        if (activeTrace != null && cancellationReason.isEmpty()) {
+            cancellationReason = reason; activeTrace.problem("取消原因", reason);
+        }
     }
 
     private Box screenshotWindowBounds(Target target) {
@@ -420,13 +454,19 @@ public final class FilterAccessibilityService extends AccessibilityService {
     }
 
     private boolean fresh(Target target, long version) {
-        if (destroyed || !gate.accept(version, requestStarted, SystemClock.uptimeMillis(), settings.enabled())
-                || !target.equals(current) || !awake()) return false;
+        if (destroyed) return false;
+        if (!settings.enabled()) { noteCancellation("过滤已暂停"); return false; }
+        if (gate.version() != version) { noteCancellation("页面或设置版本已变化"); return false; }
+        if (!gate.accept(version, requestStarted, SystemClock.uptimeMillis(), true)) {
+            noteCancellation("超过 25 秒有效期，旧画面结果不再采用"); return false;
+        }
+        if (!target.equals(current) || !awake()) { noteCancellation("目标窗口已切换或设备已锁屏"); return false; }
         try {
             WindowTarget actual = findTarget();
-            if (actual == null || !target.equals(actual.target())) return false;
-            if (settings.ai() && legacyCaptureBlocked) return false;
+            if (actual == null || !target.equals(actual.target())) { noteCancellation(selectionReason); return false; }
+            if (settings.ai() && legacyCaptureBlocked) { noteCancellation("兼容截图出现多个应用窗口"); return false; }
             if (new NodeReader().read(actual.root(), target.bounds()).fingerprint() != fingerprint) {
+                noteCancellation("页面文字或位置发生变化");
                 gate.change(); schedule(0); return false;
             }
             return true;
@@ -437,6 +477,8 @@ public final class FilterAccessibilityService extends AccessibilityService {
         inFlight = false;
         if (destroyed) return;
         if (gate.version() != version) { discarded("页面或设置变化，请求已取消"); return; }
+        if (activeTrace != null) activeTrace.problem("识别失败", message + " · 约 15 秒后重试，本地关键词仍工作");
+        activeTrace = null;
         reviewFailed = true;
         detail = message; nextCaptureAt = SystemClock.uptimeMillis() + 15000;
         // A failed request never marks a frame safe; strict mode stays covered.
@@ -462,7 +504,7 @@ public final class FilterAccessibilityService extends AccessibilityService {
     }
 
     private void clearTarget() {
-        if (current != null) { gate.resetEvidence(); client.cancel(); }
+        if (current != null) { noteCancellation("离开目标窗口、暂停或设置发生变化"); gate.resetEvidence(); client.cancel(); }
         current = null; nodeMasks = List.of(); memory.clear(); dirty = false;
         if (covers != null) covers.clear();
     }
@@ -471,6 +513,8 @@ public final class FilterAccessibilityService extends AccessibilityService {
         clearTarget(); FilterRuntime.status = "服务被中断，已暂停";
     }
     @Override public void onDestroy() {
+        if (activeTrace != null) activeTrace.problem("识别结束", "无障碍服务已关闭，请求已取消");
+        activeTrace = null;
         destroyed = true; gate.change(); main.removeCallbacksAndMessages(null); clearTarget(); client.cancel();
         if (settings != null) settings.prefs.unregisterOnSharedPreferenceChangeListener(preferencesChanged);
         if (recognizer != null) recognizer.close();

@@ -1,6 +1,7 @@
 <resources>
     <string name="app_name">屏幕过滤</string>
     <string name="diagnostic_summary">云端图文：%1$s\n本地快捷词：%2$d 个\n%3$s</string>
+    <string name="model_log_storage_status">%1$s 当前 %2$d 条事件。</string>
     <string name="topic_test_words">秋招\n考研\n论文辅导\n论文指导\n论文培训</string>
     <string name="accessibility_description">仅在选定的知乎、小红书、虎扑窗口读取文字位置、按需截图并显示阻止触摸的遮挡卡片。本地模式不上传。开启云端图文过滤需在应用内单独同意：截图和过滤要求会发送至用户配置的模型服务，可能包含个人信息并产生调用费用。截图不在本机保存。输入法打开或锁屏时暂停。服务不代替你点击或滑动。可回到应用或快捷设置暂停。</string>
 </resources>

@@ -67,6 +67,8 @@ public final class ModelSettingsActivity extends Activity {
         Ui.add(page, Ui.text(this, "开启后会把选定 App 当前窗口的截图和过滤要求发送到你填写的服务。截图可能包含用户名、私信或其他个人信息；输入法打开时暂停，识别到的输入框会被涂灰，但不能保证识别出所有敏感内容。图片不在本机落盘，服务商的数据处理规则另行适用。每次请求可能计费，至少间隔 3 秒，只保留一个在途请求；不适用于逐帧视频过滤。", 13, Ui.MUTED, false), pad);
         Ui.add(page, Ui.button(this, "保存模型设置", true, v -> saveWithConsent(false)), 12);
         Ui.add(page, Ui.button(this, "保存并测试图文连接", false, v -> saveWithConsent(true)), 12);
+        Ui.add(page, Ui.button(this, "查看模型运行日志", false,
+                v -> startActivity(new android.content.Intent(this, ModelLogActivity.class))), 12);
         Ui.add(page, Ui.button(this, "关闭云端并删除密钥", false, v -> {
             settings.prefs.edit().putBoolean("model_enabled", false).remove("upload_consent").apply();
             try { secrets.write(""); } catch (Exception ignored) { /* Removing the preference does not use Keystore. */ }
@@ -122,6 +124,7 @@ public final class ModelSettingsActivity extends Activity {
     private void testConnection() throws Exception {
         VisionClient.Config config = new VisionClient.Config(settings.endpoint(), settings.model(), secrets.read(), "只遮挡红色方块，不遮挡蓝色方块或白色背景。");
         testing = true; result.setText("正在用内置图验证图文输入和坐标返回…");
+        ModelLog.Trace trace = ModelLog.get(this).beginRecognition("内置彩色图连接测试");
         worker.execute(() -> {
             Bitmap bitmap = Bitmap.createBitmap(480, 320, Bitmap.Config.ARGB_8888);
             Canvas canvas = new Canvas(bitmap); canvas.drawColor(Color.WHITE);
@@ -133,7 +136,7 @@ public final class ModelSettingsActivity extends Activity {
             String message;
             long began = android.os.SystemClock.uptimeMillis();
             try {
-                var regions = client.classify(bitmap, config, () -> !closed);
+                var regions = client.classify(bitmap, config, () -> !closed, () -> {}, trace);
                 boolean valid = regions.size() == 1 && regions.stream().anyMatch(r -> {
                     Box mapped = RegionPolicy.mapImageBox(r.normalized(), 1000, 1000, new Box(0, 0, 480, 320));
                     long overlap = mapped.intersect(red).area();
@@ -141,7 +144,9 @@ public final class ModelSettingsActivity extends Activity {
                 });
                 message = valid ? "图文连接通过：正确定位红色方块。耗时 " + (android.os.SystemClock.uptimeMillis() - began) / 1000.0 + " 秒。\n这不代表实际内容过滤准确率，接下来请用目标 App 实测。"
                         : "接口可访问，但模型未正确定位测试方块。请检查是否为支持图文的模型，再测试。";
-            } catch (Exception error) { message = VisionClient.error(error); }
+                if (valid) trace.info("测试通过", "正确定位红色方块；实际内容准确率仍需实测。");
+                else trace.problem("测试未通过", "返回坐标没有正确定位红色方块。");
+            } catch (Exception error) { message = VisionClient.error(error); trace.problem("测试结束", message); }
             finally { bitmap.recycle(); }
             String finalMessage = message;
             runOnUiThread(() -> { testing = false; if (!closed) result.setText(finalMessage); });

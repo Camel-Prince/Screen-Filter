@@ -5,3 +5,5 @@ e6034a97f02868140cc9798265ab1e6ca9dcd86c594b5ea7d7c05945a48b0021  ScreenFilter-0
 14aa8e920a22597bca545b02ad86cadd8e43883367e5908d09922d807c7c14a9  ScreenFilter-0.3.0-vision-transfer.zip
 005e9b63e9baa6b321997b5c85c5ca57ec63d0903dd4d1e62eac36ce7a750be4  ScreenFilter-0.3.1-vision-debug.apk
 cb6d194e53b3427f8835ed8e11ef45f40cb8906c0b77207b266dff50b4327f13  ScreenFilter-0.3.1-vision-transfer.zip
+d522935e4d05f68153751d6d63eaeeebc77c6dd972a6afaff8208f8ac20fdb00  ScreenFilter-0.3.2-vision-debug.apk
+f13153d5784b2e2c7a40307210bb4d8a0564f23f3f24783411ec2f47b788ccc9  ScreenFilter-0.3.2-vision-transfer.zip

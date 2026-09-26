@@ -11,7 +11,7 @@ public final class KeywordMatcher {
 
     public KeywordMatcher(String input) {
         LinkedHashSet<String> unique = new LinkedHashSet<>();
-        for (String line : input.split("[\\r\\n,，;；]+")) {
+        for (String line : input.split("[\\r\\n,，、;；]+")) {
             String value = normalize(line);
             if (!value.isEmpty()) unique.add(value);
             if (unique.size() == 100) break;

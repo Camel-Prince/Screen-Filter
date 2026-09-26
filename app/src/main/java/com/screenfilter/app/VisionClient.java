@@ -20,6 +20,9 @@ final class VisionClient {
     private volatile HttpURLConnection connection;
     void cancel() { HttpURLConnection active = connection; if (active != null) active.disconnect(); }
     List<VisionProtocol.Region> classify(Bitmap image, Config config, BooleanSupplier active) throws Exception {
+        return classify(image, config, active, () -> {});
+    }
+    List<VisionProtocol.Region> classify(Bitmap image, Config config, BooleanSupplier active, Runnable sent) throws Exception {
         if (config.key().trim().isEmpty()) throw new Failure("请先填写 API Key");
         ByteArrayOutputStream jpeg = new ByteArrayOutputStream();
         if (!image.compress(Bitmap.CompressFormat.JPEG, 78, jpeg)) throw new Failure("图片转换失败");
@@ -41,6 +44,7 @@ final class VisionClient {
                 if (!active.getAsBoolean()) throw new InterruptedException();
                 out.write(request);
             }
+            sent.run();
             int code = http.getResponseCode();
             if (code != 200) throw new Failure(switch (code) {
                 case 401, 403 -> "鉴权失败：检查 API Key、地域和模型权限";

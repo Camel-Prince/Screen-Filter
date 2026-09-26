@@ -32,12 +32,15 @@ public final class MainActivity extends Activity {
     @android.annotation.SuppressLint("UseSwitchCompatOrMaterialCode")
     private Switch ocr, expand, strict;
     private Spinner style;
-    private TextView status;
+    private TextView status, diagnostics;
     private final Handler handler = new Handler(Looper.getMainLooper());
     private final Runnable update = new Runnable() {
         @Override public void run() {
             status.setText(!FilterRuntime.connected ? "● 尚未开启无障碍服务"
                     : settings.enabled() ? "● 已开启 · " + FilterRuntime.status : "● 已暂停");
+            diagnostics.setText(getString(R.string.diagnostic_summary,
+                    settings.ai() ? "已启用" : "未启用（仅填写 Key 不会自动开启）",
+                    new KeywordMatcher(settings.keywords()).size(), FilterRuntime.diagnostics));
             handler.postDelayed(this, 800);
         }
     };
@@ -54,7 +57,7 @@ public final class MainActivity extends Activity {
         setContentView(scroll);
         Ui.insets(scroll);
 
-        Ui.add(page, Ui.text(this, "SCREEN FILTER  /  0.3 图文体验版", 11, Ui.GREEN, true), Ui.dp(this, 12));
+        Ui.add(page, Ui.text(this, "SCREEN FILTER  /  0.3.1 图文排查版", 11, Ui.GREEN, true), Ui.dp(this, 12));
         Ui.add(page, Ui.text(this, "把屏幕，留给喜欢的。", 27, Ui.INK, true), Ui.dp(this, 10));
         Ui.add(page, Ui.text(this, "本地关键词快速遮挡 · 通义千问图文判断\n留一小块安静，给自己。",
                 14, Ui.MUTED, false), Ui.dp(this, 22));
@@ -62,6 +65,14 @@ public final class MainActivity extends Activity {
         LinearLayout stateCard = Ui.card(this, page);
         status = Ui.text(this, "", 16, Ui.GREEN, true);
         Ui.add(stateCard, status, Ui.dp(this, 8));
+        diagnostics = Ui.text(this, "", 13, Ui.MUTED, false);
+        Ui.add(stateCard, diagnostics, Ui.dp(this, 8));
+        Ui.add(stateCard, Ui.button(this, "复制诊断信息", false, v -> {
+            android.content.ClipboardManager clipboard = getSystemService(android.content.ClipboardManager.class);
+            clipboard.setPrimaryClip(android.content.ClipData.newPlainText("屏幕过滤诊断",
+                    "ScreenFilter 0.3.1 / API " + Build.VERSION.SDK_INT + "\n" + status.getText() + "\n" + diagnostics.getText()));
+            toast("已复制运行状态，不含截图、规则或密钥");
+        }), Ui.dp(this, 8));
         Ui.add(stateCard, Ui.text(this, "切换到其他 App、锁屏或弹出输入法时暂停遮挡。", 13, Ui.MUTED, false), 0);
         Ui.add(stateCard, Ui.text(this, "需要的权限：无障碍服务 → 屏幕过滤。用于读取文字位置、截图及显示遮挡；无需开启屏幕朗读。系统若未直接定位，请向下滑到「已安装的服务」。", 13, Ui.MUTED, false), Ui.dp(this, 8));
         Ui.add(stateCard, Ui.button(this, "开启 / 管理屏幕过滤服务", false, v -> explainAndOpen(false)), 0);
@@ -80,6 +91,11 @@ public final class MainActivity extends Activity {
         keywords.setInputType(android.text.InputType.TYPE_CLASS_TEXT | android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE);
         keywords.setFilters(new InputFilter[]{new InputFilter.LengthFilter(4000)});
         Ui.add(wordsCard, keywords, 0);
+        Ui.add(wordsCard, Ui.button(this, "添加测试词：秋招、考研、论文辅导", false, v -> {
+            if (keywords.length() > 0) keywords.append("\n");
+            keywords.append(getString(R.string.topic_test_words));
+            toast("已填入快捷词，请点保存并开启；这些词仅匹配文字");
+        }), 0);
         Ui.add(page, Ui.button(this, "配置通义千问 · 地址、模型、API Key", true, v -> {
             save(); startActivity(new Intent(this, ModelSettingsActivity.class));
         }), Ui.dp(this, 18));

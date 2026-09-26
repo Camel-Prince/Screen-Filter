@@ -4,11 +4,21 @@
 
 最低 Android 11 / API 30，不是鸿蒙 NEXT 原生应用。用户已在 nova 12 Ultra / HarmonyOS 4.2.0 安装运行 0.2.0，并报告滑动闪烁、首次遮挡延迟和点击穿透。0.3.0 针对这些问题修改，尚未收到新版真机结果。
 
+## 0.3.1 小红书排查修订
+
+用户反馈开启秋招、考研、论文辅导机构过滤后，相关帖子仍未遮挡。手机诊断和真实模型结果尚未取得，不能断定为模型漏判。
+
+本次修复内容更新事件无差别取消请求的问题：现在按实际文字/结构证据判断变化；滚动、离开目标、暂停仍立即作废。模型返回后增加一次本地截图复核，普通模式检查命中区域，先遮后审或空结果检查整图。两次截图间至少间隔400ms；复核截图不上传，只有缩小的颜色样本留在本次请求内存中。该启发式复核会增加延迟、可能因动画误拒绝，不能证明每个像素或语义完全没变。
+
+首页新增可复制的诊断：云端开关、可读文字数、截图尝试/成功、请求已发、模型返回/采用/命中、作废原因；切回设置仍保留本服务会话最近目标的信息。没有截图、Key或规则正文，也不自动上传诊断。可显式点击按钮填入测试词，验证本地文字路径；不会从自然语言要求偷偷扩展关键词。中文顿号也支持分隔关键词。
+
+模型提示强调逐卡检查、多个主题取并集、保留“论文辅导机构”的限定范围。尚未用用户真实帖子验证识别准确率提升。
+
 ## 手机下载
 
-- [0.3.0 下载页](https://github.com/Camel-Prince/Screen-Filter/releases/tag/v0.3.0)
-- [下载 ZIP，解压后安装 APK](https://github.com/Camel-Prince/Screen-Filter/releases/download/v0.3.0/ScreenFilter-0.3.0-vision-transfer.zip)：此前手机 APK 下载停在 100%，建议继续用 ZIP。
-- [直接下载 APK](https://github.com/Camel-Prince/Screen-Filter/releases/download/v0.3.0/ScreenFilter-0.3.0-vision-debug.apk)
+- [0.3.1 下载页](https://github.com/Camel-Prince/Screen-Filter/releases/tag/v0.3.1)
+- [下载 ZIP，解压后安装 APK](https://github.com/Camel-Prince/Screen-Filter/releases/download/v0.3.1/ScreenFilter-0.3.1-vision-transfer.zip)：此前手机 APK 下载停在 100%，建议继续用 ZIP。
+- [直接下载 APK](https://github.com/Camel-Prince/Screen-Filter/releases/download/v0.3.1/ScreenFilter-0.3.1-vision-debug.apk)
 - [SHA-256 校验值](dist/SHA256SUMS.txt)
 - [旧版 0.2.0](https://github.com/Camel-Prince/Screen-Filter/releases/tag/v0.2.0)
 
@@ -58,7 +68,7 @@ APK 为相同包名、调试签名的测试包。正常情况下直接覆盖安�
 
 ## 验证与开发
 
-见 [构建验证](docs/BUILD_VERIFICATION.md)、[三轮迭代记录](docs/ITERATIONS_0.3.0.md)、[真机清单](docs/DEVICE_TEST_PLAN.md)。编译、单元测试、静态检查不能代替华为手机触摸/截图验证，当前也没有用户 Key 做真实云端调用验收。
+见 [构建验证](docs/BUILD_VERIFICATION.md)、[三轮迭代记录](docs/ITERATIONS_0.3.0.md)、[真机清单](docs/DEVICE_TEST_PLAN.md)。编译、单元测试、静态检查不能代替华为手机触摸/截图验证，当前也没有用户 Key 做真实云端调用验收。0.3.1新增诊断和重复事件/截图复核回归检查。
 
 需要 JDK 17、SDK Platform 35、Build Tools 35.0.0。Gradle 8.11.1、AGP 8.9.2：
 

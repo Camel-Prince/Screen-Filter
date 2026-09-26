@@ -1,0 +1,8 @@
+<resources>
+    <item name="keywords" type="id" />
+    <item name="target_zhihu" type="id" />
+    <item name="target_xiaohongshu" type="id" />
+    <item name="target_hupu" type="id" />
+    <item name="ocr_enabled" type="id" />
+    <item name="expand_cards" type="id" />
+</resources>

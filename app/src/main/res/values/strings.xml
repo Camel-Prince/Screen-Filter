@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">屏幕过滤</string>
+    <string name="accessibility_description">仅在你选择的知乎、小红书、虎扑窗口中读取界面文字，在本机匹配关键词并以不透明方块遮挡命中区域。支持 Android 14 窗口截图的设备还可开启本地中文 OCR；较低版本使用不截屏的界面文字模式。截图与识别内容不保存、不上传。服务不代替你点击或滑动。可以回到应用或通过快捷设置暂停。</string>
+</resources>

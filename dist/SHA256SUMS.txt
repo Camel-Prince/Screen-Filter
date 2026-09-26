@@ -1,0 +1,2 @@
+59d00ab6bae01ce55896fe1fc67155877f149de8c1897e62d19f154a7aaeb1c1  ScreenFilter-0.1.0-debug.apk
+981b6cfc939e67b0c40d93f364c6a65e904aaa1e63b0778c7e63c259f2694cd9  ScreenFilter-0.2.0-compat-debug.apk
